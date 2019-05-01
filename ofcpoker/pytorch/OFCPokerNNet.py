@@ -21,7 +21,7 @@ class OFCPokerNet(nn.Module):
         self.dropout = nn.Dropout(p=drop_prob)
 
     def to(self, *args, **kwargs):
-        self = super().to(*args, **kwargs) 
+        self = super(OFCPokerNet, self).to(*args, **kwargs) 
         self.layers = [layer.to(*args, **kwargs) for layer in self.layers]
         return self
 
