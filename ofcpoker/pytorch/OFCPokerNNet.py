@@ -20,6 +20,11 @@ class OFCPokerNet(nn.Module):
         self.policy = nn.Linear(self.hidden_size, action_space)
         self.dropout = nn.Dropout(p=drop_prob)
 
+    def to(self, *args, **kwargs):
+        self = super().to(*args, **kwargs) 
+        self.layers = [layer.to(*args, **kwargs) for layer in self.layers]
+        return self
+
     def forward(self, front, mid, back, cur):
         front_embed = self.three_hand_embed(front).view(-1, self.embedding_dim * 2)
         mid_embed = self.five_hand_embed(mid).view(-1, self.embedding_dim * 2)
