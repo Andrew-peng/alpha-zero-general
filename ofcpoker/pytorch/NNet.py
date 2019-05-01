@@ -27,8 +27,7 @@ class NNetWrapper(NeuralNet):
     def __init__(self, game, embedding=256, lr=0.001, epochs=10, batch_size=64, drop_prob=0.3):
         self.input_dim, _ = game.getBoardSize()
         self.action_size = game.getActionSize()
-        self.nnet = ofcpnet(embedding, self.action_size, drop_prob)
-        self.nnet.to(device)
+        self.nnet = ofcpnet(embedding, self.action_size, drop_prob).to(device)
         self.lr = lr
         self.epochs = epochs
         self.batch_size = batch_size
@@ -65,20 +64,13 @@ class NNetWrapper(NeuralNet):
                 backs = [b[2] for b in boards]
                 cards = [b[3] for b in boards]
 
-                fronts = torch.FloatTensor(fronts)
-                mids = torch.FloatTensor(mids)
-                backs = torch.FloatTensor(backs)
-                cards = torch.FloatTensor(cards)
-                target_pis = torch.FloatTensor(np.array(pis))
-                target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
+                fronts = torch.FloatTensor(fronts).to(device)
+                mids = torch.FloatTensor(mids).to(device)
+                backs = torch.FloatTensor(backs).to(device)
+                cards = torch.FloatTensor(cards).to(device)
+                target_pis = torch.FloatTensor(np.array(pis)).to(device)
+                target_vs = torch.FloatTensor(np.array(vs).astype(np.float64)).to(device)
 
-                # predict
-                fronts.to(device)
-                mids.to(device)
-                backs.to(device)
-                cards.to(device)
-                target_pis.to(device)
-                target_vs.to(device)
                 
                 # measure data loading time
                 data_time.update(time.time() - end)
@@ -126,15 +118,10 @@ class NNetWrapper(NeuralNet):
         start = time.time()
 
         # preparing input
-        fronts.to(device)
-        mids.to(device)
-        backs.to(device)
-        card.to(device)
-
-        fronts = torch.unsqueeze(fronts, 0)
-        mids = torch.unsqueeze(mids, 0)
-        backs = torch.unsqueeze(backs, 0)
-        card = torch.unsqueeze(card, 0)
+        fronts = torch.unsqueeze(fronts, 0).to(device)
+        mids = torch.unsqueeze(mids, 0).to(device)
+        backs = torch.unsqueeze(backs, 0).to(device)
+        card = torch.unsqueeze(card, 0).to(device)
         self.nnet.eval()
         with torch.no_grad():
             pi, v = self.nnet(fronts, mids, backs, card)
