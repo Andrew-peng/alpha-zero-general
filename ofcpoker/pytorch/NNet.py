@@ -19,31 +19,27 @@ from torchvision import datasets, transforms
 
 from .OFCPokerNNet import OFCPokerNet as ofcpnet
 
-args = dotdict({
-    'lr': 0.001,
-    'dropout': 0.3,
-    'epochs': 10,
-    'batch_size': 64,
-    'cuda': torch.cuda.is_available(),
-    'num_channels': 512,
-})
+
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
 
 class NNetWrapper(NeuralNet):
-    def __init__(self, game):
-        self.board_x, self.board_y = game.getBoardSize()
+    def __init__(self, game, lr=0.001, epochs=10, batch_size=64, drop_prob=0.3):
+        self.input_dim, _ = game.getBoardSize()
         self.action_size = game.getActionSize()
-        self.nnet = ofcpnet()
-
-        if args.cuda:
-            self.nnet.cuda()
+        self.nnet = ofcpnet(self.input_dim, self.action_size, drop_prob)
+        self.nnet.to(device)
+        self.lr = lr
+        self.epochs = epochs
+        self.batch_size = batch_size
 
     def train(self, examples):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters())
+        optimizer = optim.Adam(self.nnet.parameters(), lr=self.lr)
 
-        for epoch in range(args.epochs):
+        for epoch in range(self.epochs):
             print('EPOCH ::: ' + str(epoch+1))
             self.nnet.train()
             data_time = AverageMeter()
@@ -52,20 +48,21 @@ class NNetWrapper(NeuralNet):
             v_losses = AverageMeter()
             end = time.time()
 
-            bar = Bar('Training Net', max=int(len(examples)/args.batch_size))
+            bar = Bar('Training Net', max=int(len(examples)/self.batch_size))
             batch_idx = 0
 
-            while batch_idx < int(len(examples)/args.batch_size):
-                sample_ids = np.random.randint(len(examples), size=args.batch_size)
+            while batch_idx < int(len(examples)/self.batch_size):
+                sample_ids = np.random.randint(len(examples), size=self.batch_size)
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
 
                 # predict
-                if args.cuda:
-                    boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
-
+                boards.to(device)
+                target_pis.to(device)
+                target_vs.to(device)
+                
                 # measure data loading time
                 data_time.update(time.time() - end)
 
@@ -92,7 +89,7 @@ class NNetWrapper(NeuralNet):
                 # plot progress
                 bar.suffix  = '({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss_pi: {lpi:.4f} | Loss_v: {lv:.3f}'.format(
                             batch=batch_idx,
-                            size=int(len(examples)/args.batch_size),
+                            size=int(len(examples)/self.batch_size),
                             data=data_time.avg,
                             bt=batch_time.avg,
                             total=bar.elapsed_td,
@@ -113,8 +110,8 @@ class NNetWrapper(NeuralNet):
 
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
-        if args.cuda: board = board.contiguous().cuda()
-        board = board.view(1, self.board_x, self.board_y)
+        board = board.contiguous().to(device)
+        board = board.view(1, self.input_dim)
         self.nnet.eval()
         with torch.no_grad():
             pi, v = self.nnet(board)
@@ -144,6 +141,6 @@ class NNetWrapper(NeuralNet):
         filepath = os.path.join(folder, filename)
         if not os.path.exists(filepath):
             raise("No model in path {}".format(filepath))
-        map_location = None if args.cuda else 'cpu'
+        map_location = device
         checkpoint = torch.load(filepath, map_location=map_location)
         self.nnet.load_state_dict(checkpoint['state_dict'])

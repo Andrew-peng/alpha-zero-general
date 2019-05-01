@@ -1,5 +1,6 @@
 from __future__ import print_function
 import sys
+import copy
 sys.path.append('..')
 from Game import Game
 from .OFCPokerLogic import OFCPokerBoard
@@ -25,7 +26,8 @@ class OFCPokerGame(Game):
             startBoard: a representation of the board (ideally this is the form
                         that will be the input to your neural network)
         """
-        pass
+        board = OFCPokerBoard()
+        return board
 
     def getBoardSize(self):
         """
@@ -33,14 +35,14 @@ class OFCPokerGame(Game):
             (x,y): a tuple of board dimensions
         """
         # represent the poker board as 13 x 1 vector
-        return (2, 13)
+        return (27, 1)
 
     def getActionSize(self):
         """
         Returns:
             actionSize: number of all possible actions
         """
-        pass
+        return 3
 
     def getNextState(self, board, player, action):
         """
@@ -53,7 +55,9 @@ class OFCPokerGame(Game):
             nextBoard: board after applying action
             nextPlayer: player who plays in the next turn (should be -player)
         """
-        pass
+        board.execute_move(action, player)
+        player = -1 * player
+        return board, player
 
     def getValidMoves(self, board, player):
         """
@@ -66,7 +70,7 @@ class OFCPokerGame(Game):
                         moves that are valid from the current board and player,
                         0 for invalid moves
         """
-        pass
+        return np.array(board.get_legal_moves(player))
 
     def getGameEnded(self, board, player):
         """
@@ -79,7 +83,10 @@ class OFCPokerGame(Game):
                small non-zero value for draw.
                
         """
-        pass
+        if not board.game_ended():
+            return 0
+        else:
+            return board.get_score(player)
 
     def getCanonicalForm(self, board, player):
         """
@@ -95,7 +102,14 @@ class OFCPokerGame(Game):
                             board as is. When the player is black, we can invert
                             the colors and return the board.
         """
-        pass
+        board = copy.deepcopy(board)
+        if player == -1:
+            board_p, card_p = board.boards[player], board.current_cards[player]
+            board.boards[player] = board.boards[-player]
+            board.current_cards[player] = board.current_cards[-player]
+            board.boards[-player] = board_p
+            board.current_cards[-player] = card_p
+        return board
 
     def getSymmetries(self, board, pi):
         """
@@ -108,7 +122,8 @@ class OFCPokerGame(Game):
                        form of the board and the corresponding pi vector. This
                        is used when training the neural network from examples.
         """
-        pass
+        # TODO: Just return the one board
+        return [(board, pi)]
 
     def stringRepresentation(self, board):
         """
@@ -119,5 +134,5 @@ class OFCPokerGame(Game):
             boardString: a quick conversion of board to a string format.
                          Required by MCTS for hashing.
         """
-        pass
+        return repr(board)
 

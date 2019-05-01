@@ -1,27 +1,30 @@
+import argparse
+
 from Coach import Coach
-from othello.OthelloGame import OthelloGame as Game
-from othello.pytorch.NNet import NNetWrapper as nn
+from ofcpoker.OFCPokerGame import OFCPokerGame as Game
+from ofcpoker.pytorch.NNet import NNetWrapper as nn
 from utils import *
 
-args = dotdict({
-    'numIters': 1000,
-    'numEps': 100,
-    'tempThreshold': 15,
-    'updateThreshold': 0.6,
-    'maxlenOfQueue': 200000,
-    'numMCTSSims': 25,
-    'arenaCompare': 40,
-    'cpuct': 1,
-
-    'checkpoint': './temp/',
-    'load_model': False,
-    'load_folder_file': ('/dev/models/8x100x50','best.pth.tar'),
-    'numItersForTrainExamplesHistory': 20,
-
-})
 
 if __name__=="__main__":
-    g = Game(6)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--num-iter', type=int, default=1000,
+                        help='Number of iterations')
+    parser.add_argument('--num-episodes', type=int, default=100,
+                        help='Number of episodes per iteration')
+    parser.add_argument('--temp-threshold', type=int, default=15,)
+    parser.add_argument('--update-threshold', type=float, default=0.6,)
+    parser.add_argument('--max-queue-len', type=int, default=200000)
+    parser.add_argument('--num-sims', type=int, default=40)
+    parser.add_argument('--arena-compare', type=int, default=40)
+    parser.add_argument('--cpuct', type=int, default=1)
+    parser.add_argument('--checkpoint', type=str, default='./tmp/')
+    parser.add_argument('--load-model', action='store_true')
+    parser.add_argument('--history-iter', type=int, default=20)
+    parser.add_argument('--load-folder-file', type=str, nargs='+', default=['./dev/models/8x100x50','best.pth.tar'])
+    args = parser.parse_args()
+
+    g = Game()
     nnet = nn(g)
 
     if args.load_model:

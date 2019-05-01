@@ -1,4 +1,5 @@
 import math
+import copy
 import numpy as np
 EPS = 1e-8
 
@@ -28,8 +29,8 @@ class MCTS():
             probs: a policy vector where the probability of the ith action is
                    proportional to Nsa[(s,a)]**(1./temp)
         """
-        for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard)
+        for i in range(self.args.num_sims):
+            self.search(copy.deepcopy(canonicalBoard))
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
@@ -69,15 +70,22 @@ class MCTS():
 
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+
         if self.Es[s]!=0:
             # terminal node
             return -self.Es[s]
 
+        # print('****')
+        # print(s)
+        # print(self.Es[s])
+        # print("****")
+
         if s not in self.Ps:
             # leaf node
-            self.Ps[s], v = self.nnet.predict(canonicalBoard)
+            self.Ps[s], v = self.nnet.predict(canonicalBoard.to_numpy(1))
             valids = self.game.getValidMoves(canonicalBoard, 1)
-            self.Ps[s] = self.Ps[s]*valids      # masking invalid moves
+            self.Ps[s] = self.Ps[s] * valids      # masking invalid moves
+
             sum_Ps_s = np.sum(self.Ps[s])
             if sum_Ps_s > 0:
                 self.Ps[s] /= sum_Ps_s    # renormalize
@@ -89,7 +97,6 @@ class MCTS():
                 print("All valid moves were masked, do workaround.")
                 self.Ps[s] = self.Ps[s] + valids
                 self.Ps[s] /= np.sum(self.Ps[s])
-
             self.Vs[s] = valids
             self.Ns[s] = 0
             return -v
@@ -100,19 +107,25 @@ class MCTS():
 
         # pick the action with the highest upper confidence bound
         for a in range(self.game.getActionSize()):
-            if valids[a]:
+            if valids[a] == 1:
                 if (s,a) in self.Qsa:
                     u = self.Qsa[(s,a)] + self.args.cpuct*self.Ps[s][a]*math.sqrt(self.Ns[s])/(1+self.Nsa[(s,a)])
                 else:
-                    u = self.args.cpuct*self.Ps[s][a]*math.sqrt(self.Ns[s] + EPS)     # Q = 0 ?
+                    u = self.args.cpuct * self.Ps[s][a]*math.sqrt(self.Ns[s] + EPS)     # Q = 0 ?
 
                 if u > cur_best:
                     cur_best = u
                     best_act = a
 
         a = best_act
+        # print('---------')
+        # print(valids)
+        # print(repr(canonicalBoard))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
+        # print(repr(next_s))
         next_s = self.game.getCanonicalForm(next_s, next_player)
+        # print(repr(next_s))
+        # print('---------')
 
         v = self.search(next_s)
 
