@@ -27,10 +27,11 @@ class NNetWrapper(NeuralNet):
     def __init__(self, game, embedding=256, lr=0.001, epochs=10, batch_size=64, drop_prob=0.3):
         self.input_dim, _ = game.getBoardSize()
         self.action_size = game.getActionSize()
-        self.nnet = ofcpnet(embedding, self.action_size, drop_prob).to(device)
-        self.lr = lr
+        self.nnet = ofcpnet(embedding, self.action_size, drop_prob)
+        self.nnet = self.nnet.to(device)
         self.epochs = epochs
         self.batch_size = batch_size
+        self.lr = lr
 
     def train(self, examples):
         """
