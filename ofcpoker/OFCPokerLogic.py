@@ -132,8 +132,10 @@ class OFCBoard(object):
         return True
 
     def get_combined(self):
-        combined = to_int53(self.front, 3) + to_int53(self.mid, 5) + to_int53(self.back, 5)
-        assert len(combined) == 13, [to_int53(self.front, 3), to_int53(self.mid, 5), to_int53(self.back, 5)]
+        combined = (to_int53(self.front, 3), to_int53(self.mid, 5), to_int53(self.back, 5))
+        assert len(combined[0]) == 3
+        assert len(combined[1]) == 5
+        assert len(combined[2]) == 5
         return combined
 
 
@@ -184,15 +186,18 @@ class OFCPokerBoard():
         cur_card = card_to_int(self.current_cards[player])
         my_board = self.boards[player].get_combined()
         opp_board = self.boards[-player].get_combined()
-        arr = my_board + opp_board
-        arr.append(cur_card)
-        return np.array(arr)
+        front = [np.sum(np.eye(53)[my_board[0]], axis=0), np.sum(np.eye(53)[opp_board[0]], axis=0)]
+        mid = [np.sum(np.eye(53)[my_board[1]], axis=0), np.sum(np.eye(53)[opp_board[1]], axis=0)]
+        back = [np.sum(np.eye(53)[my_board[2]], axis=0), np.sum(np.eye(53)[opp_board[2]], axis=0)]
+        card = np.eye(53)[cur_card]
+        return np.array(front), np.array(mid), np.array(back), card
 
     def to_torch(self, player):
         """
         Convert board into PyTorch tensor
         """
-        return torch.tensor(self.to_numpy(player))
+        f, m, b, c = self.to_numpy(player)
+        return torch.Tensor(f), torch.Tensor(m), torch.Tensor(b), torch.Tensor(c)
 
     def to_tf(self, player):
         pass

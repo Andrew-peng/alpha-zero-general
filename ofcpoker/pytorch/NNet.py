@@ -24,10 +24,10 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 
 
 class NNetWrapper(NeuralNet):
-    def __init__(self, game, lr=0.001, epochs=10, batch_size=64, drop_prob=0.3):
+    def __init__(self, game, embedding=256, lr=0.001, epochs=10, batch_size=64, drop_prob=0.3):
         self.input_dim, _ = game.getBoardSize()
         self.action_size = game.getActionSize()
-        self.nnet = ofcpnet(self.input_dim, self.action_size, drop_prob)
+        self.nnet = ofcpnet(embedding, self.action_size, drop_prob)
         self.nnet.to(device)
         self.lr = lr
         self.epochs = epochs
@@ -54,12 +54,29 @@ class NNetWrapper(NeuralNet):
             while batch_idx < int(len(examples)/self.batch_size):
                 sample_ids = np.random.randint(len(examples), size=self.batch_size)
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
-                boards = torch.FloatTensor(np.array(boards).astype(np.float64))
+                fronts, mids, backs, cards = [], [], [], []
+                for b in boards:
+                    fronts.append(b[0])
+                    mids.append(b[1])
+                    backs.append(b[2])
+                    cards.append(b[3])
+                fronts = [b[0] for b in boards]
+                mids = [b[1] for b in boards]
+                backs = [b[2] for b in boards]
+                cards = [b[3] for b in boards]
+
+                fronts = torch.FloatTensor(fronts)
+                mids = torch.FloatTensor(mids)
+                backs = torch.FloatTensor(backs)
+                cards = torch.FloatTensor(cards)
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
 
                 # predict
-                boards.to(device)
+                fronts.to(device)
+                mids.to(device)
+                backs.to(device)
+                cards.to(device)
                 target_pis.to(device)
                 target_vs.to(device)
                 
@@ -67,7 +84,7 @@ class NNetWrapper(NeuralNet):
                 data_time.update(time.time() - end)
 
                 # compute output
-                out_pi, out_v = self.nnet(boards)
+                out_pi, out_v = self.nnet(fronts, mids, backs, cards)
                 l_pi = self.loss_pi(target_pis, out_pi)
                 l_v = self.loss_v(target_vs, out_v)
                 total_loss = l_pi + l_v
@@ -101,7 +118,7 @@ class NNetWrapper(NeuralNet):
             bar.finish()
 
 
-    def predict(self, board):
+    def predict(self, fronts, mids, backs, card):
         """
         board: np array with board
         """
@@ -109,12 +126,18 @@ class NNetWrapper(NeuralNet):
         start = time.time()
 
         # preparing input
-        board = torch.FloatTensor(board.astype(np.float64))
-        board = board.contiguous().to(device)
-        board = board.view(1, self.input_dim)
+        fronts.to(device)
+        mids.to(device)
+        backs.to(device)
+        card.to(device)
+
+        fronts = torch.unsqueeze(fronts, 0)
+        mids = torch.unsqueeze(mids, 0)
+        backs = torch.unsqueeze(backs, 0)
+        card = torch.unsqueeze(card, 0)
         self.nnet.eval()
         with torch.no_grad():
-            pi, v = self.nnet(board)
+            pi, v = self.nnet(fronts, mids, backs, card)
 
         #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
         return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
