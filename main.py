@@ -22,10 +22,13 @@ if __name__=="__main__":
     parser.add_argument('--load-model', action='store_true')
     parser.add_argument('--history-iter', type=int, default=20)
     parser.add_argument('--load-folder-file', type=str, nargs='+', default=['./dev/models/8x100x50','best.pth.tar'])
+    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--batch-size', type=int, default=64)
+    parser.add_argument('--learning-rate', type=float, default=0.001)
     args = parser.parse_args()
 
     g = Game()
-    nnet = nn(g)
+    nnet = nn(g, epochs=args.epochs, batch_size=args.batch_size, lr=args.learning_rate)
 
     if args.load_model:
         nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])

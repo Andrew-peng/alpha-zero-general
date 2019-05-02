@@ -1,5 +1,6 @@
 import pickle
 import random
+import itertools
 
 import torch
 import tensorflow as tf
@@ -113,6 +114,17 @@ class OFCBoard(object):
         if street_id == 2:
             self.back.append(card)
 
+    def permute(self, street_id):
+        if street_id == 0:
+            perms = itertools.permutations(self.front)
+            self.front = list(random.choice(list(perms)))
+        if street_id == 1:
+            perms = itertools.permutations(self.mid)
+            self.mid = list(random.choice(list(perms)))
+        if street_id == 2:
+            perms = itertools.permutations(self.back)
+            self.back = list(random.choice(list(perms)))
+
     def is_complete(self):
         if len(self.back) == 5 and \
                len(self.mid) == 5 and \
@@ -158,6 +170,14 @@ class OFCPokerBoard():
             1: self.deck.draw()
         }
         self.draw_eps = draw_eps
+
+    def get_permutable_streets(self, player):
+        b = self.boards[player]
+        return (len(b.front) > 1, len(b.mid) > 1, len(b.back) > 1)
+
+    def permute(self, street, player):
+        b = self.boards[player]
+        b.permute(street)
 
     def has_legal_moves(self, player):
         assert player in self.boards

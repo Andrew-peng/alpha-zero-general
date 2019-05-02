@@ -1,6 +1,7 @@
 from __future__ import print_function
 import sys
 import copy
+from itertools import chain, combinations
 sys.path.append('..')
 from Game import Game
 from .OFCPokerLogic import OFCPokerBoard
@@ -123,7 +124,27 @@ class OFCPokerGame(Game):
                        is used when training the neural network from examples.
         """
         # TODO: Just return the one board
-        return [(board, pi)]
+        # Current player is p1
+        # Checking my board for permutable streets
+        my_street_lens = board.get_permutable_streets(1)
+        permutable = [(1, i) for i in range(len(my_street_lens)) if my_street_lens[i]]
+        # Checking opp board for permutable streets
+        opp_street_lens = board.get_permutable_streets(-1)
+        permutable.extend([(-1, i) for i in range(len(opp_street_lens)) if my_street_lens[i]])
+        # Generate all subsets
+
+        def generate_subsets(l):
+            return chain.from_iterable(combinations(l,n) for n in range(len(l)+1))
+
+        street_permutations = generate_subsets(permutable)
+        symmetries = [(board, pi)]
+        for to_permute in street_permutations:
+            b = copy.deepcopy(board)
+            p = copy.deepcopy(pi)
+            for player, street in to_permute:
+                b.permute(street, player)
+            symmetries.append((b, p))
+        return symmetries
 
     def stringRepresentation(self, board):
         """
