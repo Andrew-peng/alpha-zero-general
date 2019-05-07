@@ -11,7 +11,7 @@ from termcolor import colored
 
 
 CARDS = [
-    '_', '2s', '3s', '4s', '5s', '6s', '7s', '8s', '9s', 'Ts', 'Js', 'Qs', 'Ks', 'As',
+    '2s', '3s', '4s', '5s', '6s', '7s', '8s', '9s', 'Ts', 'Js', 'Qs', 'Ks', 'As',
     '2h', '3h', '4h', '5h', '6h', '7h', '8h', '9h', 'Th', 'Jh', 'Qh', 'Kh', 'Ah',
     '2d', '3d', '4d', '5d', '6d', '7d', '8d', '9d', 'Td', 'Jd', 'Qd', 'Kd', 'Ad',
     '2c', '3c', '4c', '5c', '6c', '7c', '8c', '9c', 'Tc', 'Jc', 'Qc', 'Kc', 'Ac']
@@ -29,7 +29,7 @@ def pretty_suits(cards):
             cards[i] = cards[i][0] + " " + u"\u2663".encode('utf-8') # clubs
     return cards
 
-CARD_MAP = dict(zip(pretty_suits(CARDS), list(range(53))))
+CARD_MAP = dict(zip(pretty_suits(CARDS), list(range(52))))
 
 
 FRONT_LOOKUP = pickle.load(open("ofcpoker/front_lookup.p", 'rb'))
@@ -206,10 +206,10 @@ class OFCPokerBoard():
         cur_card = card_to_int(self.current_cards[player])
         my_board = self.boards[player].get_combined()
         opp_board = self.boards[-player].get_combined()
-        front = [np.sum(np.eye(53)[my_board[0]], axis=0), np.sum(np.eye(53)[opp_board[0]], axis=0)]
-        mid = [np.sum(np.eye(53)[my_board[1]], axis=0), np.sum(np.eye(53)[opp_board[1]], axis=0)]
-        back = [np.sum(np.eye(53)[my_board[2]], axis=0), np.sum(np.eye(53)[opp_board[2]], axis=0)]
-        card = np.eye(53)[cur_card]
+        front = [np.sum(np.eye(53)[my_board[0]], axis=0), np.sum(np.eye(52)[opp_board[0]], axis=0)]
+        mid = [np.sum(np.eye(53)[my_board[1]], axis=0), np.sum(np.eye(52)[opp_board[1]], axis=0)]
+        back = [np.sum(np.eye(53)[my_board[2]], axis=0), np.sum(np.eye(52)[opp_board[2]], axis=0)]
+        card = np.eye(52)[cur_card]
         return np.array(front), np.array(mid), np.array(back), card
 
     def to_torch(self, player):
@@ -283,4 +283,4 @@ class OFCPokerBoard():
             if score == 0:
                 score += self.draw_eps
 
-            return score
+            return 1 if score > 0 else -1

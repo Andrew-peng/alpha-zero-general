@@ -9,9 +9,9 @@ class OFCPokerNet(nn.Module):
         super(OFCPokerNet, self).__init__()
         self.embedding_dim = embedding_dim
         self.hidden_size = hidden_size
-        self.three_hand_embed = nn.Linear(53, self.embedding_dim)
-        self.five_hand_embed = nn.Linear(53, self.embedding_dim)
-        self.cur_card_embed = nn.Linear(53, self.hidden_size)
+        self.three_hand_embed = nn.Linear(52, self.embedding_dim)
+        self.five_hand_embed = nn.Linear(52, self.embedding_dim)
+        self.cur_card_embed = nn.Linear(52, self.hidden_size)
 
         input_dim = 6 * self.embedding_dim + self.hidden_size
         self.fc1 = nn.Linear(input_dim, self.hidden_size)
