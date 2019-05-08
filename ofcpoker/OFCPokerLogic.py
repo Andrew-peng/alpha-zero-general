@@ -18,7 +18,7 @@ CARDS = [
 
 # HACK
 def pretty_suits(cards):
-    for i in range(1, len(cards)):
+    for i in range(len(cards)):
         if cards[i][1] == 's':
             cards[i] = cards[i][0] + " " + u"\u2660".encode('utf-8') # spades
         elif cards[i][1] == 'h':
