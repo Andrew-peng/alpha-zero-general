@@ -206,9 +206,9 @@ class OFCPokerBoard():
         cur_card = card_to_int(self.current_cards[player])
         my_board = self.boards[player].get_combined()
         opp_board = self.boards[-player].get_combined()
-        front = [np.sum(np.eye(53)[my_board[0]], axis=0), np.sum(np.eye(52)[opp_board[0]], axis=0)]
-        mid = [np.sum(np.eye(53)[my_board[1]], axis=0), np.sum(np.eye(52)[opp_board[1]], axis=0)]
-        back = [np.sum(np.eye(53)[my_board[2]], axis=0), np.sum(np.eye(52)[opp_board[2]], axis=0)]
+        front = [np.sum(np.eye(52)[my_board[0]], axis=0), np.sum(np.eye(52)[opp_board[0]], axis=0)]
+        mid = [np.sum(np.eye(52)[my_board[1]], axis=0), np.sum(np.eye(52)[opp_board[1]], axis=0)]
+        back = [np.sum(np.eye(52)[my_board[2]], axis=0), np.sum(np.eye(52)[opp_board[2]], axis=0)]
         card = np.eye(52)[cur_card]
         return np.array(front), np.array(mid), np.array(back), card
 
